@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>WA-Chain Edu — Waitlist</title>
+    <meta name="description" content="Join the waitlist for WA-Chain Educational Contents — learning resources on Japanese paper (washi) for paper and book conservators." />
+    <meta name="theme-color" content="#f8f9f8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121617" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" href="/fonts/source-sans-3-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <span class="brand">
+          <img src="/images/logo.webp" alt="" width="40" height="40" />
+          <span>WA-Chain Edu</span>
+        </span>
+        <div class="lang-switch" role="group" aria-label="Language">
+          <button type="button" data-lang="en" aria-pressed="true">English</button>
+          <button type="button" data-lang="ja" aria-pressed="false" lang="ja">日本語</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container narrow" id="main">
+      <section id="intro">
+        <h1 data-i18n="title">Join the <span class="nowrap">WA-Chain Edu</span> waitlist</h1>
+        <p class="lead" data-i18n="lead">This is the waitlist for WA-Chain Educational Contents.</p>
+        <p class="release">
+          <span data-i18n="release">Planned release: 1 November 2026</span>
+          <span class="countdown tnum" id="countdown"></span>
+        </p>
+      </section>
+
+      <form id="form" class="card" novalidate>
+        <div class="field">
+          <label for="name" data-i18n="nameLabel">Full name</label>
+          <input id="name" name="name" type="text" autocomplete="name" maxlength="100" required aria-describedby="name-error" />
+          <p class="field-error" id="name-error" hidden></p>
+        </div>
+
+        <div class="field">
+          <label for="country" data-i18n="countryLabel">Country or region</label>
+          <select id="country" name="country" autocomplete="country" required aria-describedby="country-error"></select>
+          <p class="field-error" id="country-error" hidden></p>
+        </div>
+
+        <div class="field">
+          <label for="affiliation" data-i18n="affiliationLabel">Affiliation</label>
+          <p class="field-hint" id="affiliation-hint" data-i18n="affiliationHint">The kind of place where you work or study</p>
+          <select id="affiliation" name="affiliation" required aria-describedby="affiliation-hint affiliation-error"></select>
+          <p class="field-error" id="affiliation-error" hidden></p>
+        </div>
+
+        <div class="field">
+          <label for="email" data-i18n="emailLabel">Email address</label>
+          <p class="field-hint" id="email-hint" data-i18n="emailHint">We’ll send your confirmation here.</p>
+          <input id="email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" spellcheck="false" required aria-describedby="email-hint email-error" />
+          <p class="field-error" id="email-error" hidden></p>
+        </div>
+
+        <!-- Honeypot: hidden from people and screen readers; bots fill it in. -->
+        <div class="hp" aria-hidden="true">
+          <label for="website">Website</label>
+          <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
+        </div>
+
+        <p class="purpose" data-i18n="purpose">We use your details only to provide WA-Chain Edu to you in the way that suits you best. We never sell them or share them with anyone else.</p>
+
+        <div class="check">
+          <input id="consent" name="consent" type="checkbox" required aria-describedby="consent-error" />
+          <label for="consent">
+            <span data-i18n="consentBefore">I agree to the</span>
+            <a href="/privacy" target="_blank" rel="noopener" id="privacy-link" data-i18n="consentLink">privacy notice</a><span data-i18n="consentAfter">, including storage of my details with Google (USA).</span>
+          </label>
+        </div>
+        <p class="field-error" id="consent-error" hidden></p>
+
+        <div class="check">
+          <input id="newsletter" name="newsletter" type="checkbox" />
+          <label for="newsletter" data-i18n="newsletter">Also send me occasional WA-Chain updates (optional)</label>
+        </div>
+
+        <div id="turnstile" class="turnstile"></div>
+
+        <p class="form-error" id="form-error" role="alert" hidden></p>
+
+        <button type="submit" class="btn btn-primary" id="submit">
+          <span data-i18n="submit">Join the waitlist</span>
+        </button>
+      </form>
+
+      <section id="done" class="card done" hidden tabindex="-1" aria-labelledby="done-title">
+        <h2 id="done-title"></h2>
+        <p class="position tnum" id="done-position"></p>
+        <p class="tnum" id="done-days"></p>
+        <p id="done-mail"></p>
+        <a class="btn btn-secondary" id="done-mockup" href="#" target="_blank" rel="noopener" hidden>
+          <span data-i18n="mockup">Preview the prototype mockup</span>
+        </a>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <a href="/privacy" id="footer-privacy" data-i18n="privacy">Privacy notice</a>
+        <span>© 2026 WA-Chain</span>
+      </div>
+    </footer>
+  </body>
+</html>

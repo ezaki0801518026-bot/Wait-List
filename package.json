@@ -1,0 +1,20 @@
+{
+  "name": "wa-chain-edu-waitlist",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev public --port 8788 --compatibility-date=2026-10-01",
+    "mock-gas": "node test/mock-gas-server.mjs",
+    "test": "node --test test/gas.test.mjs"
+  },
+  "devDependencies": {
+    "@fontsource/source-sans-3": "^5.3.0",
+    "@fontsource/source-serif-4": "^5.3.0",
+    "wrangler": "^4.147.0"
+  },
+  "allowScripts": {
+    "workerd@1.20261001.1": true,
+    "esbuild@0.28.1": true
+  }
+}

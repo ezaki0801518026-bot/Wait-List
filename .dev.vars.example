@@ -1,0 +1,7 @@
+# Local development only. Copy to .dev.vars (git-ignored).
+# Points at the local Apps Script simulator (npm run mock-gas) and uses
+# Cloudflare's published Turnstile test keys, which always pass.
+GAS_URL=http://127.0.0.1:8790/exec
+GAS_SECRET=local-test-secret-not-for-production
+TURNSTILE_SECRET=1x0000000000000000000000000000000AA
+TURNSTILE_SITE_KEY=1x00000000000000000000AA
