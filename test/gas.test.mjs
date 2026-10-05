@@ -33,7 +33,7 @@ test('refuses everything when SHARED_SECRET is not configured', () => {
 test('appends a row, numbers it and sends an English confirmation', () => {
   const g = gas()
   const r = g.post(base())
-  assert.deepEqual(r, { ok: true, status: 'created', position: 1, mockupUrl: null })
+  assert.deepEqual(r, { ok: true, status: 'created', position: 1, mockupUrl: 'https://trial-version.pages.dev/' })
   const [header, row] = g.rows()
   assert.equal(header[0], 'No.')
   assert.equal(row[0], 1)
@@ -50,7 +50,7 @@ test('appends a row, numbers it and sends an English confirmation', () => {
   assert.match(m.body, /only to provide WA-Chain Edu/)
   assert.match(m.body, /https:\/\/waitlist\.example\/privacy\?lang=en/)
   assert.doesNotMatch(m.body, /WA-Chain updates/)
-  assert.doesNotMatch(m.body, /mockup/)
+  assert.ok(m.body.includes('https://trial-version.pages.dev/')) // default mockup link
 })
 
 test('Japanese confirmation with newsletter and mockup link', () => {
@@ -73,7 +73,7 @@ test('duplicate email (any letter case) returns the original number and sends no
   g.post(base())
   g.post(base({ email: 'second@example.org' }))
   const r = g.post(base({ email: 'PERSON@Example.ORG' }))
-  assert.deepEqual(r, { ok: true, status: 'existing', position: 1, mockupUrl: null })
+  assert.deepEqual(r, { ok: true, status: 'existing', position: 1, mockupUrl: 'https://trial-version.pages.dev/' })
   assert.equal(g.rows().length, 3)
   assert.equal(g.outbox.length, 2)
 })

@@ -12,7 +12,7 @@ const gas = createGas({
   props: {
     SHARED_SECRET: 'local-test-secret-not-for-production',
     SITE_URL: 'http://127.0.0.1:8788',
-    MOCKUP_URL: process.env.MOCKUP_URL || '',
+    MOCKUP_URL: process.env.MOCKUP_URL || '', // empty = the default in Code.gs
   },
 })
 const pending = new Map()

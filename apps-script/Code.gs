@@ -8,7 +8,7 @@
  * Script properties (Project Settings → Script properties):
  *   SHARED_SECRET  long random string; same value as GAS_SECRET on Cloudflare
  *   SITE_URL       public URL of the waitlist page, e.g. https://….pages.dev
- *   MOCKUP_URL     link to the prototype mockup (leave empty until it exists)
+ *   MOCKUP_URL     optional; overrides DEFAULT_MOCKUP_URL below
  *
  * After pasting: run setup() once, then Deploy → New deployment → Web app,
  * Execute as: Me, Who has access: Anyone. See SETUP.md.
@@ -27,6 +27,10 @@ var RELEASE_DATE_LABEL = { en: '1 November 2026', ja: '2026年11月1日' }
 // Safety valve: at most this many new rows per rolling hour. Protects the
 // Gmail quota (100/day on a free account) and the sheet from a flood.
 var MAX_NEW_PER_HOUR = 60
+
+// Prototype mockup shown on the completion screen and in the email.
+// The script property MOCKUP_URL, if set, takes precedence.
+var DEFAULT_MOCKUP_URL = 'https://trial-version.pages.dev/'
 
 function doPost(e) {
   var req
@@ -63,7 +67,7 @@ function doPost(e) {
             ok: true,
             status: 'existing',
             position: rows[i][COL.no - 1],
-            mockupUrl: props.getProperty('MOCKUP_URL') || null,
+            mockupUrl: mockupUrl_(props),
           })
         }
       }
@@ -113,7 +117,7 @@ function doPost(e) {
     ok: true,
     status: 'created',
     position: position,
-    mockupUrl: props.getProperty('MOCKUP_URL') || null,
+    mockupUrl: mockupUrl_(props),
   })
 }
 
@@ -162,7 +166,7 @@ function sendConfirmation_(p) {
   var site = (props.getProperty('SITE_URL') || '').replace(/\/+$/, '')
   var mail = composeMail_(p, {
     privacyUrl: site ? site + '/privacy?lang=' + p.lang : '',
-    mockupUrl: props.getProperty('MOCKUP_URL') || '',
+    mockupUrl: mockupUrl_(props),
   })
   try {
     MailApp.sendEmail({
@@ -256,6 +260,10 @@ function isValid_(r) {
     s(r.countryCode, 2) && s(r.country, 100) && s(r.affiliation, 100) &&
     s(r.consentVersion, 100)
   )
+}
+
+function mockupUrl_(props) {
+  return props.getProperty('MOCKUP_URL') || DEFAULT_MOCKUP_URL
 }
 
 function normalizeEmail_(e) {
