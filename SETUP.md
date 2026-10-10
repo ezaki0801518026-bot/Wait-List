@@ -120,7 +120,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 | 削除の依頼が来たら | その行を削除する（他の人の番号は変わりません） |
 | 配信停止の依頼が来たら | その行の `Newsletter` を `N` にする |
 | 2027-11-01 以降 | `Newsletter` が `N` の行をすべて削除する（保存期間の満了）。`Y` の行は配信停止まで残す |
-| リリース日を変えるとき | `public/shared.js` の `RELEASE_DATE`、`apps-script/Code.gs` の `RELEASE_DATE_LABEL`、ページの文言（`public/app.js` の `release`）、`privacy.html` の保存期間の4か所を直す |
+| リリース日を変えるとき | `public/shared.js` の `RELEASE_DATE`、`apps-script/Code.gs` の `RELEASE_DATE_LABEL`、ページの文言（`public/app.js` の `release`）、`privacy.html` の保存期間の4か所を直す。あわせて、トライアル版（WA-Landing）のヒーロー下の文言 `src/i18n/strings.js` の `earlyAccessHeroLine`（英日）と、プライバシーポリシー本体の第7項も直す |
 
 ### 知っておくこと
 - 無料の Gmail から送れるのは **1日100通まで**。超えた分は `pending` として保存され、1時間ごとに自動で再送されます。
