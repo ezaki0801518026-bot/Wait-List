@@ -1,8 +1,8 @@
 import { bindLangSwitch } from './lang.js'
 
 const TITLES = {
-  en: ['Privacy notice — WA-Chain Edu waitlist', '← Back to the waitlist'],
-  ja: ['プライバシーに関するお知らせ — WA-Chain Edu ウェイトリスト', '← ウェイトリストに戻る'],
+  en: ['Privacy notice — WA-Chain Edu early access list', '← Back to the early access list'],
+  ja: ['プライバシーに関するお知らせ — WA-Chain Edu 先行案内リスト', '← 先行案内リストに戻る'],
 }
 
 bindLangSwitch((lang) => {

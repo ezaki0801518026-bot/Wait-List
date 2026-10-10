@@ -45,7 +45,9 @@ test('appends a row, numbers it and sends an English confirmation', () => {
   const m = g.outbox[0]
   assert.equal(m.to, 'person@example.org')
   assert.equal(m.name, 'WA-Chain')
-  assert.match(m.body, /You are user #1 on the waitlist\./)
+  assert.match(m.body, /You are user #1 on the early access list\./)
+  assert.match(m.body, /nothing to pay now/)
+  assert.match(m.subject, /early access list/)
   assert.match(m.body, /1 November 2026/)
   assert.match(m.body, /only to provide WA-Chain Edu/)
   assert.match(m.body, /https:\/\/waitlist\.example\/privacy\?lang=en/)
@@ -139,10 +141,82 @@ test('hourly cap returns busy once reached', () => {
   assert.equal(g.post(base({ email: 'u5@example.org' })).status, 'existing')
 })
 
-test('setup creates the sheet and exactly one retry trigger', () => {
+test('setup creates the sheet and exactly one trigger of each kind', () => {
   const g = gas()
   g.run('setup')
   g.run('setup')
-  assert.equal(g.triggers.length, 1)
+  assert.deepEqual(g.triggers.map((t) => t.getHandlerFunction()).sort(), ['monthlySummary', 'sendPendingMails'])
   assert.equal(g.rows().length, 1)
+})
+
+test('stores the origin tags and interests in the new columns', () => {
+  const g = gas()
+  g.post(base({ source: 'interview', entry: 'washimap', interests: 'videos,map' }))
+  const [header, row] = g.rows()
+  assert.deepEqual([...header.slice(11)], ['Source', 'Entry point', 'Interests'])
+  assert.deepEqual([...row.slice(11)], ['interview', 'washimap', 'videos,map'])
+})
+
+test('missing or malformed tags fall back to direct / link / no interests', () => {
+  const g = gas()
+  g.post(base())
+  g.post(base({ email: 'b@example.org', source: 'Bad Value!', entry: '=1+1', interests: 'a@b.c' }))
+  assert.deepEqual([...g.rows()[1].slice(11)], ['direct', 'link', ''])
+  assert.deepEqual([...g.rows()[2].slice(11)], ['direct', 'link', ''])
+})
+
+test('no mockup link in the email for people who came from a trial-site button', () => {
+  const g = gas()
+  g.post(base({ entry: 'hero' }))
+  assert.ok(!g.outbox[0].body.includes('trial-version.pages.dev'))
+  g.post(base({ email: 'dm@example.org', source: 'dm' })) // sent the link directly
+  assert.ok(g.outbox[1].body.includes('trial-version.pages.dev'))
+})
+
+test('pending mails keep the mockup rule when they are sent later', () => {
+  const g = gas({ quota: 0 })
+  g.post(base({ entry: 'about' }))
+  g.setQuota(100)
+  g.run('sendPendingMails')
+  assert.ok(!g.outbox[0].body.includes('trial-version.pages.dev'))
+})
+
+test('an older sheet gets the new column headings', () => {
+  const g = gas({ props: { LAST_NO: '1' } })
+  const old = ['No.', 'Registered (UTC)', 'Name', 'Email', 'Country code', 'Country',
+    'Affiliation', 'Language', 'Newsletter', 'Consent version', 'Mail status']
+  g.seed([old, [1, '2026-10-06T00:00:00.000Z', 'Old Person', 'old@example.org', 'GB',
+    'United Kingdom', 'Museum / Gallery', 'en', 'N', 'waitlist-notice-2026-10-05', 'sent']])
+  g.post(base())
+  assert.deepEqual([...g.rows()[0].slice(11)], ['Source', 'Entry point', 'Interests'])
+  assert.equal(g.rows()[2][0], 2) // numbering continues from the counter
+})
+
+test('monthly summary writes counts only, never names or addresses', () => {
+  const g = gas({ props: { SUMMARY_SPREADSHEET_ID: 'sum1' } })
+  g.post(base({ source: 'dm', entry: 'link', interests: 'videos,map', newsletter: true }))
+  g.post(base({ email: 'b@example.org', source: 'interview', entry: 'washimap', interests: 'map' }))
+  g.post(base({ email: 'c@example.org', source: 'interview', entry: 'washimap' }))
+  g.run('monthlySummary')
+  const month = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 7)
+  const totals = g.summary('sum1', 'Totals')
+  assert.deepEqual(totals[1], [month, 3, 1, ''])
+  assert.deepEqual(g.summary('sum1', 'By source & entry').slice(1), [
+    [month, 'dm', 'link', 1],
+    [month, 'interview', 'washimap', 2],
+  ])
+  assert.deepEqual(g.summary('sum1', 'By interest').slice(1), [
+    [month, 'map', 2],
+    [month, 'videos', 1],
+  ])
+  const everything = JSON.stringify([totals, g.summary('sum1', 'By source & entry'), g.summary('sum1', 'By interest')])
+  assert.ok(!/example\.org|Test Person/.test(everything))
+  // Running again replaces the tables instead of appending.
+  g.run('monthlySummary')
+  assert.equal(g.summary('sum1', 'Totals').length, 2)
+})
+
+test('monthly summary refuses to run without a target file', () => {
+  const g = gas()
+  assert.throws(() => g.run('monthlySummary'), /SUMMARY_SPREADSHEET_ID/)
 })

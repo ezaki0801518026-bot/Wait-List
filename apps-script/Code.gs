@@ -9,6 +9,9 @@
  *   SHARED_SECRET  long random string; same value as GAS_SECRET on Cloudflare
  *   SITE_URL       public URL of the waitlist page, e.g. https://….pages.dev
  *   MOCKUP_URL     optional; overrides DEFAULT_MOCKUP_URL below
+ *   SUMMARY_SPREADSHEET_ID
+ *                  ID of a separate spreadsheet that receives the monthly
+ *                  counts (no names or addresses). Share only that file.
  *
  * After pasting: run setup() once, then Deploy → New deployment → Web app,
  * Execute as: Me, Who has access: Anyone. See SETUP.md.
@@ -18,8 +21,12 @@ var SHEET_NAME = 'Waitlist'
 var HEADERS = [
   'No.', 'Registered (UTC)', 'Name', 'Email', 'Country code', 'Country',
   'Affiliation', 'Language', 'Newsletter', 'Consent version', 'Mail status',
+  'Source', 'Entry point', 'Interests',
 ]
-var COL = { no: 1, at: 2, name: 3, email: 4, lang: 8, newsletter: 9, mail: 11 }
+var COL = {
+  no: 1, at: 2, name: 3, email: 4, lang: 8, newsletter: 9, mail: 11,
+  source: 12, entry: 13, interests: 14,
+}
 
 // Keep in sync with RELEASE_DATE in public/shared.js.
 var RELEASE_DATE_LABEL = { en: '1 November 2026', ja: '2026年11月1日' }
@@ -93,6 +100,9 @@ function doPost(e) {
       req.newsletter === true ? 'Y' : 'N',
       text_(req.consentVersion),
       'pending',
+      tag_(req.source, 'direct'),
+      tag_(req.entry, 'link'),
+      /^[a-z,-]{0,100}$/.test(req.interests || '') ? req.interests || '' : '',
     ])
     SpreadsheetApp.flush()
     rowIndex = sheet.getLastRow()
@@ -109,6 +119,7 @@ function doPost(e) {
       lang: req.lang === 'ja' ? 'ja' : 'en',
       newsletter: req.newsletter === true,
       position: position,
+      showMockup: tag_(req.entry, 'link') === 'link',
     })
     getSheet_().getRange(rowIndex, COL.mail).setValue(status)
   }
@@ -126,13 +137,21 @@ function doGet() {
   return json_({ ok: false, error: 'method_not_allowed' })
 }
 
-/** Run once from the editor: creates the sheet and the hourly retry trigger. */
+/**
+ * Run once from the editor (and again after updating this code): creates
+ * the sheet, the hourly mail retry and the monthly summary triggers.
+ */
 function setup() {
   getSheet_()
-  var exists = ScriptApp.getProjectTriggers().some(function (t) {
-    return t.getHandlerFunction() === 'sendPendingMails'
+  var handlers = ScriptApp.getProjectTriggers().map(function (t) {
+    return t.getHandlerFunction()
   })
-  if (!exists) ScriptApp.newTrigger('sendPendingMails').timeBased().everyHours(1).create()
+  if (handlers.indexOf('sendPendingMails') < 0) {
+    ScriptApp.newTrigger('sendPendingMails').timeBased().everyHours(1).create()
+  }
+  if (handlers.indexOf('monthlySummary') < 0) {
+    ScriptApp.newTrigger('monthlySummary').timeBased().onMonthDay(1).atHour(9).create()
+  }
   // Ask for Gmail permission now, not on the first registration.
   MailApp.getRemainingDailyQuota()
 }
@@ -153,9 +172,61 @@ function sendPendingMails() {
       lang: r[COL.lang - 1] === 'ja' ? 'ja' : 'en',
       newsletter: r[COL.newsletter - 1] === 'Y',
       position: r[COL.no - 1],
+      showMockup: (r[COL.entry - 1] || 'link') === 'link',
     })
     sheet.getRange(i + 2, COL.mail).setValue(status)
   }
+}
+
+/**
+ * Monthly (1st, 09:00 JST) and on demand: counts registrations by month,
+ * channel and entry point, and by interest, into the separate summary
+ * spreadsheet. Only numbers are written there, never names or addresses.
+ */
+function monthlySummary() {
+  var id = PropertiesService.getScriptProperties().getProperty('SUMMARY_SPREADSHEET_ID')
+  if (!id) throw new Error('Set the script property SUMMARY_SPREADSHEET_ID first (see SETUP.md).')
+
+  var sheet = getSheet_()
+  var last = sheet.getLastRow()
+  var rows = last < 2 ? [] : sheet.getRange(2, 1, last - 1, HEADERS.length).getValues()
+  var byOrigin = {}
+  var byInterest = {}
+  var totals = {}
+  rows.forEach(function (r) {
+    var at = new Date(r[COL.at - 1])
+    if (isNaN(at.getTime())) return
+    var month = Utilities.formatDate(at, 'Asia/Tokyo', 'yyyy-MM')
+    var t = totals[month] || (totals[month] = [0, 0])
+    t[0]++
+    if (r[COL.newsletter - 1] === 'Y') t[1]++
+    var key = [month, r[COL.source - 1] || 'direct', r[COL.entry - 1] || 'link'].join('|')
+    byOrigin[key] = (byOrigin[key] || 0) + 1
+    String(r[COL.interests - 1] || '').split(',').forEach(function (code) {
+      if (!code) return
+      var k = month + '|' + code
+      byInterest[k] = (byInterest[k] || 0) + 1
+    })
+  })
+
+  var table = function (counts) {
+    return Object.keys(counts).sort().map(function (k) {
+      return k.split('|').concat([counts[k]])
+    })
+  }
+  var out = SpreadsheetApp.openById(id)
+  var stamp = 'Updated ' + Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm') + ' JST'
+  writeTable_(out, 'Totals', ['Month', 'Registrations', 'Newsletter opt-ins', stamp],
+    Object.keys(totals).sort().map(function (m) { return [m, totals[m][0], totals[m][1], ''] }))
+  writeTable_(out, 'By source & entry', ['Month', 'Source', 'Entry point', 'Registrations'], table(byOrigin))
+  writeTable_(out, 'By interest', ['Month', 'Interest', 'Registrations'], table(byInterest))
+}
+
+function writeTable_(ss, name, header, rows) {
+  var sh = ss.getSheetByName(name) || ss.insertSheet(name)
+  sh.clearContents()
+  var data = [header].concat(rows)
+  sh.getRange(1, 1, data.length, header.length).setValues(data)
 }
 
 // ── Email ────────────────────────────────────────────────────────────────
@@ -166,7 +237,8 @@ function sendConfirmation_(p) {
   var site = (props.getProperty('SITE_URL') || '').replace(/\/+$/, '')
   var mail = composeMail_(p, {
     privacyUrl: site ? site + '/privacy?lang=' + p.lang : '',
-    mockupUrl: mockupUrl_(props),
+    // Not for people who came from a button on the trial site itself.
+    mockupUrl: p.showMockup === false ? '' : mockupUrl_(props),
   })
   try {
     MailApp.sendEmail({
@@ -188,10 +260,11 @@ function composeMail_(p, links) {
     ? [
         p.name + ' 様',
         '',
-        'WA-Chain Edu のウェイトリストへのご登録が完了しました。',
+        'WA-Chain Edu 先行案内リストへのご登録が完了しました。',
         '',
         'あなたは ' + p.position + ' 人目のユーザーです。',
         'リリース予定日：' + RELEASE_DATE_LABEL.ja,
+        '今は料金はかかりません。登録しても、購入の義務は生じません。WA-Chain Edu が公開されたら、メールでお知らせします。',
         links.mockupUrl ? '\nプロトタイプのモックアップはこちらからご覧いただけます：\n' + links.mockupUrl : null,
         '',
         '【個人情報の取り扱い】',
@@ -206,10 +279,11 @@ function composeMail_(p, links) {
     : [
         'Dear ' + p.name + ',',
         '',
-        'Thank you for joining the WA-Chain Edu waitlist. Your registration is complete.',
+        'Thank you for joining the WA-Chain Edu early access list. Your registration is complete.',
         '',
-        'You are user #' + p.position + ' on the waitlist.',
+        'You are user #' + p.position + ' on the early access list.',
         'Planned release: ' + RELEASE_DATE_LABEL.en,
+        'There is nothing to pay now, and joining does not commit you to anything. We will email you as soon as WA-Chain Edu opens.',
         links.mockupUrl ? '\nYou can preview the prototype mockup here:\n' + links.mockupUrl : null,
         '',
         'How we use your details',
@@ -233,8 +307,8 @@ function composeMail_(p, links) {
     '</div>'
   return {
     subject: ja
-      ? 'WA-Chain Edu ウェイトリストへの登録が完了しました'
-      : 'You’re on the WA-Chain Edu waitlist',
+      ? 'WA-Chain Edu 先行案内リストへの登録が完了しました'
+      : 'You’re on the WA-Chain Edu early access list',
     text: text,
     html: html,
   }
@@ -249,6 +323,9 @@ function getSheet_() {
     sheet = ss.insertSheet(SHEET_NAME)
     sheet.appendRow(HEADERS)
     sheet.setFrozenRows(1)
+  } else if (sheet.getLastColumn() < HEADERS.length) {
+    // A sheet made by an earlier version: add the newer column headings.
+    sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS])
   }
   return sheet
 }
@@ -260,6 +337,12 @@ function isValid_(r) {
     s(r.countryCode, 2) && s(r.country, 100) && s(r.affiliation, 100) &&
     s(r.consentVersion, 100)
   )
+}
+
+// Origin tags were already checked against the allowlist on Cloudflare;
+// here only their shape is enforced.
+function tag_(v, none) {
+  return typeof v === 'string' && /^[a-z-]{1,40}$/.test(v) ? v : none
 }
 
 function mockupUrl_(props) {

@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>WA-Chain Edu — Waitlist</title>
-    <meta name="description" content="Join the waitlist for WA-Chain Educational Contents — learning resources on Japanese paper (washi) for paper and book conservators." />
+    <title>WA-Chain Edu — Early access list</title>
+    <meta name="description" content="Join the early access list for WA-Chain Educational Contents — learning resources on Japanese paper (washi) for paper and book conservators." />
     <meta name="theme-color" content="#f8f9f8" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#121617" media="(prefers-color-scheme: dark)" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -28,12 +28,16 @@
 
     <main class="container narrow" id="main">
       <section id="intro">
-        <h1 data-i18n="title">Join the <span class="nowrap">WA-Chain Edu</span> waitlist</h1>
+        <h1 data-i18n="title">Join the <span class="nowrap">WA-Chain Edu</span> early access list</h1>
         <p class="lead" data-i18n="lead">This is the waitlist for WA-Chain Educational Contents.</p>
         <p class="release">
           <span data-i18n="release">Planned release: 1 November 2026</span>
           <span class="countdown tnum" id="countdown"></span>
         </p>
+        <ul class="promises">
+          <li data-i18n="promiseFree">No payment now. Joining is free and doesn’t commit you to anything.</li>
+          <li data-i18n="promiseNotify">We’ll email you as soon as it opens.</li>
+        </ul>
       </section>
 
       <form id="form" class="card" novalidate>
@@ -69,6 +73,12 @@
           <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
         </div>
 
+        <fieldset class="field interests">
+          <legend data-i18n="interestsLabel">What are you most interested in? (optional)</legend>
+          <p class="field-hint" data-i18n="interestsHint">Choose any that apply.</p>
+          <div id="interests" class="interest-list"></div>
+        </fieldset>
+
         <p class="purpose" data-i18n="purpose">We use your details only to provide WA-Chain Edu to you in the way that suits you best. We never sell them or share them with anyone else.</p>
 
         <div class="check">
@@ -90,7 +100,7 @@
         <p class="form-error" id="form-error" role="alert" hidden></p>
 
         <button type="submit" class="btn btn-primary" id="submit">
-          <span data-i18n="submit">Join the waitlist</span>
+          <span data-i18n="submit">Join the early access list</span>
         </button>
       </form>
 
@@ -99,6 +109,7 @@
         <p class="position tnum" id="done-position"></p>
         <p class="tnum" id="done-days"></p>
         <p id="done-mail"></p>
+        <p id="done-promise"></p>
         <a class="btn btn-secondary" id="done-mockup" href="#" target="_blank" rel="noopener" hidden>
           <span data-i18n="mockup">Preview the prototype mockup</span>
         </a>

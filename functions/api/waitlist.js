@@ -16,8 +16,12 @@ import {
   CONSENT_VERSION,
   COUNTRY_CODES,
   EMAIL_PATTERN,
+  ENTRIES,
+  INTERESTS,
   LIMITS,
+  SOURCES,
   countryName,
+  tag,
 } from '../../public/shared.js'
 
 const MAX_BODY_BYTES = 4096
@@ -56,7 +60,19 @@ function validate(input) {
   const lang = input.lang === 'ja' ? 'ja' : 'en'
   const newsletter = input.newsletter === true
 
-  return { errors, data: { name, country, affiliation, email, lang, newsletter } }
+  // Hidden origin tags and the optional interests never cause an error:
+  // unknown values are reduced to "other" or dropped.
+  const source = tag(input.src, SOURCES, 'direct')
+  const entry = tag(input.from, ENTRIES, 'link')
+  const known = INTERESTS.map((i) => i.code)
+  const interests = Array.isArray(input.interests)
+    ? known.filter((code) => input.interests.includes(code))
+    : []
+
+  return {
+    errors,
+    data: { name, country, affiliation, email, lang, newsletter, source, entry, interests },
+  }
 }
 
 async function verifyTurnstile(token, secret, ip) {
@@ -131,6 +147,9 @@ export async function onRequestPost({ request, env }) {
         lang: data.lang,
         newsletter: data.newsletter,
         consentVersion: CONSENT_VERSION,
+        source: data.source,
+        entry: data.entry,
+        interests: data.interests.join(','),
       }),
       redirect: 'follow', // Apps Script answers via a 302 to googleusercontent.com
       signal: AbortSignal.timeout(25000),
