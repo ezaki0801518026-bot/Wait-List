@@ -173,7 +173,6 @@ export async function onRequestPost({ request, env }) {
     ok: true,
     status: result.status === 'existing' ? 'existing' : 'created',
     position: Number(result.position) || null,
-    mockupUrl: /^https:\/\//.test(result.mockupUrl || '') ? result.mockupUrl : null,
   })
 }
 

@@ -33,7 +33,7 @@ test('refuses everything when SHARED_SECRET is not configured', () => {
 test('appends a row, numbers it and sends an English confirmation', () => {
   const g = gas()
   const r = g.post(base())
-  assert.deepEqual(r, { ok: true, status: 'created', position: 1, mockupUrl: 'https://trial-version.pages.dev/' })
+  assert.deepEqual({ ...r }, { ok: true, status: 'created', position: 1 })
   const [header, row] = g.rows()
   assert.equal(header[0], 'No.')
   assert.equal(row[0], 1)
@@ -52,21 +52,17 @@ test('appends a row, numbers it and sends an English confirmation', () => {
   assert.match(m.body, /only to provide WA-Chain Edu/)
   assert.match(m.body, /https:\/\/waitlist\.example\/privacy\?lang=en/)
   assert.doesNotMatch(m.body, /WA-Chain updates/)
-  assert.ok(m.body.includes('https://trial-version.pages.dev/')) // default mockup link
 })
 
-test('Japanese confirmation with newsletter and mockup link', () => {
-  const g = gas({ props: { MOCKUP_URL: 'https://mockup.example/demo' } })
-  const r = g.post(base({ lang: 'ja', newsletter: true, name: '山田 花子' }))
-  assert.equal(r.mockupUrl, 'https://mockup.example/demo')
+test('Japanese confirmation with newsletter', () => {
+  const g = gas()
+  g.post(base({ lang: 'ja', newsletter: true, name: '山田 花子' }))
   const m = g.outbox[0]
   assert.match(m.subject, /登録が完了しました/)
   assert.match(m.body, /山田 花子 様/)
   assert.match(m.body, /あなたは 1 人目のユーザーです。/)
   assert.match(m.body, /2026年11月1日/)
   assert.match(m.body, /活動報告/)
-  assert.match(m.body, /https:\/\/mockup\.example\/demo/)
-  assert.match(m.htmlBody, /<a href="https:\/\/mockup\.example\/demo"/)
   assert.equal(g.rows()[1][8], 'Y')
 })
 
@@ -75,7 +71,7 @@ test('duplicate email (any letter case) returns the original number and sends no
   g.post(base())
   g.post(base({ email: 'second@example.org' }))
   const r = g.post(base({ email: 'PERSON@Example.ORG' }))
-  assert.deepEqual(r, { ok: true, status: 'existing', position: 1, mockupUrl: 'https://trial-version.pages.dev/' })
+  assert.deepEqual({ ...r }, { ok: true, status: 'existing', position: 1 })
   assert.equal(g.rows().length, 3)
   assert.equal(g.outbox.length, 2)
 })
@@ -165,20 +161,20 @@ test('missing or malformed tags fall back to direct / link / no interests', () =
   assert.deepEqual([...g.rows()[2].slice(11)], ['direct', 'link', ''])
 })
 
-test('no mockup link in the email for people who came from a trial-site button', () => {
-  const g = gas()
-  g.post(base({ entry: 'hero' }))
-  assert.ok(!g.outbox[0].body.includes('trial-version.pages.dev'))
-  g.post(base({ email: 'dm@example.org', source: 'dm' })) // sent the link directly
-  assert.ok(g.outbox[1].body.includes('trial-version.pages.dev'))
-})
-
-test('pending mails keep the mockup rule when they are sent later', () => {
-  const g = gas({ quota: 0 })
-  g.post(base({ entry: 'about' }))
+test('no link to the trial site or a mockup, in any email or response', () => {
+  // Even if an old MOCKUP_URL script property is still set, it is ignored.
+  const g = gas({ quota: 0, props: { MOCKUP_URL: 'https://trial-version.pages.dev/' } })
+  const responses = [
+    g.post(base({ entry: 'hero' })),
+    g.post(base({ email: 'dm@example.org', source: 'dm' })),
+    g.post(base({ email: 'ja@example.org', lang: 'ja' })),
+    g.post(base({ email: 'dm@example.org' })), // existing
+  ]
   g.setQuota(100)
-  g.run('sendPendingMails')
-  assert.ok(!g.outbox[0].body.includes('trial-version.pages.dev'))
+  g.run('sendPendingMails') // also covers mails sent later
+  assert.equal(g.outbox.length, 3)
+  const everything = JSON.stringify([responses, g.outbox])
+  assert.ok(!/trial-version|mockup|モックアップ|プロトタイプ/i.test(everything), everything)
 })
 
 test('an older sheet gets the new column headings', () => {

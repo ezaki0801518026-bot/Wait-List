@@ -58,7 +58,6 @@ const T = {
     mailSent: (e) => `We’ve sent a confirmation email to ${e}. If it hasn’t arrived within an hour, please check your spam folder.`,
     mailExisting: 'This email address is already on the list, so we haven’t sent another email.',
     donePromise: 'There’s nothing to pay now. We’ll email you as soon as WA-Chain Edu opens.',
-    mockup: 'Preview the prototype mockup',
   },
   ja: {
     pageTitle: 'WA-Chain Edu — 先行案内リスト',
@@ -104,7 +103,6 @@ const T = {
     mailSent: (e) => `${e} に確認メールをお送りしました。1時間以内に届かない場合は、迷惑メールフォルダをご確認ください。`,
     mailExisting: 'このメールアドレスはすでに登録されているため、メールは再送していません。',
     donePromise: '今は料金はかかりません。WA-Chain Edu が公開されたら、メールでお知らせします。',
-    mockup: 'プロトタイプのモックアップを見る',
   },
 }
 
@@ -202,12 +200,6 @@ function renderDone() {
   $('done-days').textContent = t.days(daysUntilRelease())
   $('done-mail').textContent = existing ? t.mailExisting : t.mailSent(result.email)
   $('done-promise').textContent = t.donePromise
-  // People who came from a button on the trial site have seen the
-  // prototype already; offer it only to those sent the link directly.
-  const mockup = $('done-mockup')
-  const show = Boolean(result.mockupUrl) && arrival.from === 'link'
-  mockup.hidden = !show
-  if (show) mockup.href = result.mockupUrl
 }
 
 // ── Validation ──────────────────────────────────────────────

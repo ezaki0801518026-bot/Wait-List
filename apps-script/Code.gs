@@ -8,7 +8,6 @@
  * Script properties (Project Settings → Script properties):
  *   SHARED_SECRET  long random string; same value as GAS_SECRET on Cloudflare
  *   SITE_URL       public URL of the waitlist page, e.g. https://….pages.dev
- *   MOCKUP_URL     optional; overrides DEFAULT_MOCKUP_URL below
  *   SUMMARY_SPREADSHEET_ID
  *                  ID of a separate spreadsheet that receives the monthly
  *                  counts (no names or addresses). Share only that file.
@@ -34,10 +33,6 @@ var RELEASE_DATE_LABEL = { en: '1 November 2026', ja: '2026年11月1日' }
 // Safety valve: at most this many new rows per rolling hour. Protects the
 // Gmail quota (100/day on a free account) and the sheet from a flood.
 var MAX_NEW_PER_HOUR = 60
-
-// Prototype mockup shown on the completion screen and in the email.
-// The script property MOCKUP_URL, if set, takes precedence.
-var DEFAULT_MOCKUP_URL = 'https://trial-version.pages.dev/'
 
 function doPost(e) {
   var req
@@ -74,7 +69,6 @@ function doPost(e) {
             ok: true,
             status: 'existing',
             position: rows[i][COL.no - 1],
-            mockupUrl: mockupUrl_(props),
           })
         }
       }
@@ -119,7 +113,6 @@ function doPost(e) {
       lang: req.lang === 'ja' ? 'ja' : 'en',
       newsletter: req.newsletter === true,
       position: position,
-      showMockup: tag_(req.entry, 'link') === 'link',
     })
     getSheet_().getRange(rowIndex, COL.mail).setValue(status)
   }
@@ -128,7 +121,6 @@ function doPost(e) {
     ok: true,
     status: 'created',
     position: position,
-    mockupUrl: mockupUrl_(props),
   })
 }
 
@@ -172,7 +164,6 @@ function sendPendingMails() {
       lang: r[COL.lang - 1] === 'ja' ? 'ja' : 'en',
       newsletter: r[COL.newsletter - 1] === 'Y',
       position: r[COL.no - 1],
-      showMockup: (r[COL.entry - 1] || 'link') === 'link',
     })
     sheet.getRange(i + 2, COL.mail).setValue(status)
   }
@@ -237,8 +228,6 @@ function sendConfirmation_(p) {
   var site = (props.getProperty('SITE_URL') || '').replace(/\/+$/, '')
   var mail = composeMail_(p, {
     privacyUrl: site ? site + '/privacy?lang=' + p.lang : '',
-    // Not for people who came from a button on the trial site itself.
-    mockupUrl: p.showMockup === false ? '' : mockupUrl_(props),
   })
   try {
     MailApp.sendEmail({
@@ -265,7 +254,6 @@ function composeMail_(p, links) {
         'あなたは ' + p.position + ' 人目のユーザーです。',
         'リリース予定日：' + RELEASE_DATE_LABEL.ja,
         '今は料金はかかりません。登録しても、購入の義務は生じません。WA-Chain Edu が公開されたら、メールでお知らせします。',
-        links.mockupUrl ? '\nプロトタイプのモックアップはこちらからご覧いただけます：\n' + links.mockupUrl : null,
         '',
         '【個人情報の取り扱い】',
         'ご登録いただいた情報は、WA-Chain Edu をあなたに最適な形で提供するためにのみ利用します。販売や第三者への提供は行いません。',
@@ -284,7 +272,6 @@ function composeMail_(p, links) {
         'You are user #' + p.position + ' on the early access list.',
         'Planned release: ' + RELEASE_DATE_LABEL.en,
         'There is nothing to pay now, and joining does not commit you to anything. We will email you as soon as WA-Chain Edu opens.',
-        links.mockupUrl ? '\nYou can preview the prototype mockup here:\n' + links.mockupUrl : null,
         '',
         'How we use your details',
         'We use your details only to provide WA-Chain Edu to you in the way that suits you best. We never sell them or share them with anyone else.',
@@ -343,10 +330,6 @@ function isValid_(r) {
 // here only their shape is enforced.
 function tag_(v, none) {
   return typeof v === 'string' && /^[a-z-]{1,40}$/.test(v) ? v : none
-}
-
-function mockupUrl_(props) {
-  return props.getProperty('MOCKUP_URL') || DEFAULT_MOCKUP_URL
 }
 
 function normalizeEmail_(e) {

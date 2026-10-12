@@ -39,7 +39,6 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 |---|---|
 | `SHARED_SECRET` | 手順4の合言葉 |
 | `SITE_URL` | いったん空欄で可（手順 B-5 で入れる） |
-| `MOCKUP_URL` | 不要（空欄のままでよい）。モックアップ https://trial-version.pages.dev/ はコードに既定値として入っている。別の URL に変えるときだけ入れる |
 | `SUMMARY_SPREADSHEET_ID` | 月ごとの集計を書き出す**別の**スプレッドシートの ID（下の手順5-2） |
 
 5-2. 月ごとの集計用に、**もう1つ**新しいスプレッドシートを作り、名前を「WA-Chain Edu Waitlist 集計」にする。
@@ -116,7 +115,6 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 |---|---|
 | 新しい版の `Code.gs` を貼り替えたとき | `setup` を1回実行し、「デプロイを管理」で新バージョンにする |
 | 月末 | 集計ファイルを見る（毎月1日に自動更新）。経路・入口の意味は `WA-Chain/ウェイトリスト_場面別リンク一覧.md` |
-| モックアップの URL を変えるとき | スクリプト プロパティ `MOCKUP_URL` に新しい `https://…` を入れるだけ（コードの既定値より優先）。再公開は不要。完了画面とメールの両方に反映されます |
 | 削除の依頼が来たら | その行を削除する（他の人の番号は変わりません） |
 | 配信停止の依頼が来たら | その行の `Newsletter` を `N` にする |
 | 2027-11-01 以降 | `Newsletter` が `N` の行をすべて削除する（保存期間の満了）。`Y` の行は配信停止まで残す |
