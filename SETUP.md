@@ -144,3 +144,14 @@ npm run dev
 ```bash
 npm test
 ```
+
+## 独自ドメイン early.wa-chain.org に移すとき（2026-10-23 準備）
+
+順番が大事です。上から順に行ってください。
+
+1. **Cloudflare（ユーザー）**: Workers & Pages → `wa-chain-edu-waitlist` → Custom domains → Set up a custom domain → `early.wa-chain.org` → Activate。状態が **Active** になるまで待つ。
+2. **Turnstile（ユーザー）**: Cloudflare → Turnstile → このサイトのウィジェット → Hostname Management に `early.wa-chain.org` を追加（`wa-chain-edu-waitlist.pages.dev` は残してよい）。**これを忘れると、新しいアドレスでは送信できない。**
+3. **Apps Script（ユーザー）**: スクリプトのプロパティ `SITE_URL` を `https://early.wa-chain.org` に変更（確認メールのリンク先）。再デプロイは不要。
+4. **このリポジトリ（Claude）**: `custom-domain` ブランチを main にマージ → 旧アドレス（pages.dev）から新アドレスへ自動転送が始まる。
+5. **トライアル版（Claude）**: Trial-version の `custom-domain` ブランチを main にマージ → 申込みボタンが新アドレスを指す。
+6. **確認（Claude）**: 新アドレスでの表示・言語切替・テスト送信（モック）、旧アドレスからの転送、確認メールのリンク。
