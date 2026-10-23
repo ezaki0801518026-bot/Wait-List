@@ -124,9 +124,19 @@
       </section>
     </main>
 
+    <!-- The privacy notice opens here, over the form, so nothing typed is
+         lost (in-app browsers often ignore target="_blank"). -->
+    <dialog id="privacy-dialog" class="privacy-dialog" aria-labelledby="privacy-dialog-title">
+      <div class="privacy-dialog-bar">
+        <span id="privacy-dialog-title" data-i18n="privacy">Privacy notice</span>
+        <button type="button" class="btn btn-secondary btn-sm" id="privacy-close" data-i18n="close">Close</button>
+      </div>
+      <div class="privacy-dialog-body" id="privacy-body"></div>
+    </dialog>
+
     <footer class="site-footer">
       <div class="container">
-        <a href="/privacy" id="footer-privacy" data-i18n="privacy">Privacy notice</a>
+        <a href="/privacy" target="_blank" rel="noopener" id="footer-privacy" data-i18n="privacy">Privacy notice</a>
         <span>© 2026 WA-Chain</span>
       </div>
     </footer>

@@ -584,3 +584,56 @@ fieldset.interests legend {
 .heard-other {
   margin-top: 0.75rem;
 }
+
+
+/* ── Privacy notice dialog ─────────────────────────────────── */
+
+.privacy-dialog {
+  width: min(44rem, calc(100vw - 2rem));
+  max-height: min(90dvh, 52rem);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  color: var(--text);
+  box-shadow: var(--shadow-border), 0 24px 48px rgb(0 0 0 / 0.25);
+  overflow: hidden;
+}
+
+.privacy-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.privacy-dialog::backdrop {
+  background: rgb(13 17 18 / 0.55);
+}
+
+.privacy-dialog-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+  font-weight: 600;
+}
+
+.privacy-dialog-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1.25rem 1.25rem 2rem;
+}
+
+.privacy-dialog-body h1 {
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.btn-sm {
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  font-size: 0.9375rem;
+}

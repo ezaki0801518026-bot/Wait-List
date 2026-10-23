@@ -42,6 +42,8 @@ const T = {
     submit: 'Join the early access list',
     submitting: 'Sending…',
     privacy: 'Privacy notice',
+    close: 'Close',
+    privacyLoadError: 'The privacy notice could not be loaded. Please try again.',
     err: {
       name: 'Enter your name.',
       country: 'Select your country or region.',
@@ -91,6 +93,8 @@ const T = {
     submit: '先行案内リストに登録する',
     submitting: '送信しています…',
     privacy: 'プライバシーに関するお知らせ',
+    close: '閉じる',
+    privacyLoadError: 'プライバシーに関するお知らせを読み込めませんでした。もう一度お試しください。',
     err: {
       name: 'お名前を入力してください。',
       country: '国・地域を選択してください。',
@@ -397,6 +401,53 @@ FIELDS.forEach((f) =>
 )
 
 $('heard').addEventListener('change', syncHeardOther)
+
+// ── Privacy notice in a dialog ──────────────────────────────
+// Following the link would leave the page and lose what was typed, so the
+// notice (the same /privacy page) is shown over the form instead. A
+// modified click (new tab/window) still follows the link.
+
+let privacyDoc = null
+
+async function openPrivacy(event) {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+  event.preventDefault()
+  const body = $('privacy-body')
+  try {
+    if (!privacyDoc) {
+      const html = await fetch('/privacy').then((r) => {
+        if (!r.ok) throw new Error(String(r.status))
+        return r.text()
+      })
+      privacyDoc = new DOMParser().parseFromString(html, 'text/html')
+    }
+    const article = privacyDoc.querySelector(`[data-lang-section="${lang}"]`)
+    const copy = document.importNode(article, true)
+    copy.hidden = false
+    // Links inside the notice must not take this tab away either.
+    copy.querySelectorAll('a[href]').forEach((a) => {
+      a.target = '_blank'
+      a.rel = 'noopener'
+    })
+    body.replaceChildren(copy)
+  } catch {
+    const p = document.createElement('p')
+    p.textContent = T[lang].privacyLoadError
+    body.replaceChildren(p)
+  }
+  const dialog = $('privacy-dialog')
+  if (!dialog.open) dialog.showModal()
+  body.scrollTop = 0
+  $('privacy-close').focus()
+}
+
+$('privacy-link').addEventListener('click', openPrivacy)
+$('footer-privacy').addEventListener('click', openPrivacy)
+$('privacy-close').addEventListener('click', () => $('privacy-dialog').close())
+// A click on the dimmed backdrop (outside the panel) closes it too.
+$('privacy-dialog').addEventListener('click', (event) => {
+  if (event.target === event.currentTarget) event.currentTarget.close()
+})
 
 bindLangSwitch((next) => {
   lang = next
