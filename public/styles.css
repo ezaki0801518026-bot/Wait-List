@@ -580,3 +580,7 @@ fieldset.interests legend {
 .interest-list label {
   font-weight: 400;
 }
+
+.heard-other {
+  margin-top: 0.75rem;
+}

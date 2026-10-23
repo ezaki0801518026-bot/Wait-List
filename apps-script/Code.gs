@@ -20,11 +20,11 @@ var SHEET_NAME = 'Waitlist'
 var HEADERS = [
   'No.', 'Registered (UTC)', 'Name', 'Email', 'Country code', 'Country',
   'Affiliation', 'Language', 'Newsletter', 'Consent version', 'Mail status',
-  'Source', 'Entry point', 'Interests',
+  'Source', 'Entry point', 'Interests', 'Heard via', 'Heard via (other)',
 ]
 var COL = {
   no: 1, at: 2, name: 3, email: 4, lang: 8, newsletter: 9, mail: 11,
-  source: 12, entry: 13, interests: 14,
+  source: 12, entry: 13, interests: 14, heard: 15, heardOther: 16,
 }
 
 // Keep in sync with RELEASE_DATE in public/shared.js.
@@ -97,6 +97,8 @@ function doPost(e) {
       tag_(req.source, 'direct'),
       tag_(req.entry, 'link'),
       /^[a-z,-]{0,100}$/.test(req.interests || '') ? req.interests || '' : '',
+      /^[a-z,-]{0,100}$/.test(req.heard || '') ? req.heard || '' : '',
+      typeof req.heardOther === 'string' && req.heardOther.length <= 100 ? text_(req.heardOther) : '',
     ])
     SpreadsheetApp.flush()
     rowIndex = sheet.getLastRow()
@@ -183,6 +185,7 @@ function monthlySummary() {
   var rows = last < 2 ? [] : sheet.getRange(2, 1, last - 1, HEADERS.length).getValues()
   var byOrigin = {}
   var byInterest = {}
+  var byHeard = {}
   var totals = {}
   rows.forEach(function (r) {
     var at = new Date(r[COL.at - 1])
@@ -198,6 +201,12 @@ function monthlySummary() {
       var k = month + '|' + code
       byInterest[k] = (byInterest[k] || 0) + 1
     })
+    // Codes only; the free-text "other" answers never leave the main sheet.
+    String(r[COL.heard - 1] || '').split(',').forEach(function (code) {
+      if (!code) return
+      var k = month + '|' + code
+      byHeard[k] = (byHeard[k] || 0) + 1
+    })
   })
 
   var table = function (counts) {
@@ -211,6 +220,7 @@ function monthlySummary() {
     Object.keys(totals).sort().map(function (m) { return [m, totals[m][0], totals[m][1], ''] }))
   writeTable_(out, 'By source & entry', ['Month', 'Source', 'Entry point', 'Registrations'], table(byOrigin))
   writeTable_(out, 'By interest', ['Month', 'Interest', 'Registrations'], table(byInterest))
+  writeTable_(out, 'By heard via', ['Month', 'Heard via', 'Registrations'], table(byHeard))
 }
 
 function writeTable_(ss, name, header, rows) {

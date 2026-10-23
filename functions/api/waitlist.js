@@ -17,6 +17,7 @@ import {
   COUNTRY_CODES,
   EMAIL_PATTERN,
   ENTRIES,
+  HEARD,
   INTERESTS,
   LIMITS,
   SOURCES,
@@ -68,10 +69,17 @@ function validate(input) {
   const interests = Array.isArray(input.interests)
     ? known.filter((code) => input.interests.includes(code))
     : []
+  const heardCodes = HEARD.map((h) => h.code)
+  const heard = Array.isArray(input.heard)
+    ? heardCodes.filter((code) => input.heard.includes(code))
+    : []
+  // Free text only alongside "other"; the only free-text field besides the name.
+  const heardOther = heard.includes('other') ? str(input.heardOther).normalize('NFC') : ''
+  if (heardOther.length > LIMITS.heardOther || CONTROL_CHARS.test(heardOther)) errors.push('heardOther')
 
   return {
     errors,
-    data: { name, country, affiliation, email, lang, newsletter, source, entry, interests },
+    data: { name, country, affiliation, email, lang, newsletter, source, entry, interests, heard, heardOther },
   }
 }
 
@@ -150,6 +158,8 @@ export async function onRequestPost({ request, env }) {
         source: data.source,
         entry: data.entry,
         interests: data.interests.join(','),
+        heard: data.heard.join(','),
+        heardOther: data.heardOther,
       }),
       redirect: 'follow', // Apps Script answers via a 302 to googleusercontent.com
       signal: AbortSignal.timeout(25000),

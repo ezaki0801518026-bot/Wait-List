@@ -43,7 +43,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 5-2. 月ごとの集計用に、**もう1つ**新しいスプレッドシートを作り、名前を「WA-Chain Edu Waitlist 集計」にする。
    - その URL の `https://docs.google.com/spreadsheets/d/`**この部分**`/edit` が ID。上の `SUMMARY_SPREADSHEET_ID` に入れる。
-   - 毎月1日 9:00 に、月ごと・経路（`src`）・入口（`from`）・関心ごとの**人数だけ**が書き出される（名前・アドレスは入らない）。
+   - 毎月1日 9:00 に、月ごと・経路（`src`）・入口（`from`）・関心・何で知ったかの**人数だけ**が書き出される（名前・アドレスや「その他」の記述は入らない）。
    - チームで共有するのは**この集計ファイルだけ**にする。名簿のスプレッドシートは共有しない。
    - すぐに見たいときは、Apps Script のエディタで `monthlySummary` を選んで「実行」する。
 

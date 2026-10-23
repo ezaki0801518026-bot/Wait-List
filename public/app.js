@@ -3,6 +3,7 @@ import {
   COUNTRY_CODES,
   EMAIL_PATTERN,
   ENTRIES,
+  HEARD,
   INTERESTS,
   LIMITS,
   SOURCES,
@@ -30,6 +31,8 @@ const T = {
     select: 'Select…',
     interestsLabel: 'What are you most interested in? (optional)',
     interestsHint: 'Choose any that apply.',
+    heardLabel: 'How did you know about this? (optional)',
+    heardOtherLabel: 'Please tell us (optional)',
     purpose:
       'We use your details only to provide WA-Chain Edu to you in the way that suits you best. We never sell them or share them with anyone else.',
     consentBefore: 'I agree to the ',
@@ -45,6 +48,7 @@ const T = {
       affiliation: 'Select your affiliation.',
       email: 'Enter a valid email address, like name@example.org.',
       consent: 'Please agree to the privacy notice to join.',
+      heardOther: 'Please keep this to 100 characters.',
       verification: 'We couldn’t confirm that you’re not a bot. Please try again.',
       busy: 'We’re receiving a lot of sign-ups right now. Please try again in a few minutes.',
       unavailable: 'Something went wrong on our side. Please try again in a few minutes.',
@@ -76,6 +80,8 @@ const T = {
     select: '選択してください',
     interestsLabel: 'いちばん関心のあることは？（任意）',
     interestsHint: 'あてはまるものをいくつでも選んでください。',
+    heardLabel: 'WA-Chain Edu を何で知りましたか？（任意）',
+    heardOtherLabel: 'よろしければ教えてください（任意）',
     purpose:
       'ご登録いただいた情報は、WA-Chain Edu をあなたに最適な形で提供するためにのみ利用します。販売や第三者への提供は行いません。',
     consentBefore: '',
@@ -91,6 +97,7 @@ const T = {
       affiliation: '所属機関を選択してください。',
       email: 'メールアドレスを正しく入力してください（例：name@example.org）。',
       consent: '登録には、プライバシーに関するお知らせへの同意が必要です。',
+      heardOther: '100字以内で入力してください。',
       verification: 'ボットではないことを確認できませんでした。もう一度お試しください。',
       busy: 'ただいま登録が集中しています。数分後にもう一度お試しください。',
       unavailable: 'こちら側で問題が起きました。数分後にもう一度お試しください。',
@@ -109,7 +116,7 @@ const T = {
 const $ = (id) => document.getElementById(id)
 const form = $('form')
 const submitBtn = $('submit')
-const FIELDS = ['name', 'country', 'affiliation', 'email', 'consent']
+const FIELDS = ['name', 'country', 'affiliation', 'email', 'consent', 'heardOther']
 
 let lang = 'en'
 const arrival = readOrigin() // where this visitor came from
@@ -143,16 +150,23 @@ function fillSelect(select, options) {
   if (!keep) select.selectedIndex = 0
 }
 
-function renderInterests() {
-  const box = $('interests')
-  const checked = new Set(readInterests())
+function renderChecklists() {
+  renderChecks('interests', 'interests', INTERESTS)
+  renderChecks('heard', 'heard', HEARD)
+  syncHeardOther()
+}
+
+// A list of optional checkboxes; keeps what was ticked across languages.
+function renderChecks(boxId, name, options) {
+  const box = $(boxId)
+  const checked = new Set(readChecks(name))
   box.replaceChildren(
-    ...INTERESTS.map(({ code, ...labels }) => {
-      const id = `interest-${code}`
+    ...options.map(({ code, ...labels }) => {
+      const id = `${name}-${code}`
       const row = document.createElement('div')
       row.className = 'check'
       const input = Object.assign(document.createElement('input'), {
-        type: 'checkbox', id, name: 'interests', value: code, checked: checked.has(code),
+        type: 'checkbox', id, name, value: code, checked: checked.has(code),
       })
       const label = Object.assign(document.createElement('label'), { htmlFor: id, textContent: labels[lang] })
       row.append(input, label)
@@ -178,7 +192,7 @@ function render() {
     COUNTRY_CODES.map((c) => [c, countryName(c, lang)]).sort((a, b) => collator.compare(a[1], b[1])),
   )
   fillSelect($('affiliation'), AFFILIATIONS.map((a) => [a.code, a[lang]]))
-  renderInterests()
+  renderChecklists()
 
   // Re-translate any visible errors.
   FIELDS.forEach((f) => {
@@ -212,13 +226,21 @@ function readForm() {
     email: $('email').value.trim(),
     consent: $('consent').checked,
     newsletter: $('newsletter').checked,
-    interests: readInterests(),
+    interests: readChecks('interests'),
+    heard: readChecks('heard'),
+    // Only sent when "Other" is ticked.
+    heardOther: readChecks('heard').includes('other') ? $('heardOther').value.trim() : '',
     website: $('website').value,
   }
 }
 
-function readInterests() {
-  return [...document.querySelectorAll('input[name="interests"]:checked')].map((i) => i.value)
+function readChecks(name) {
+  return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map((i) => i.value)
+}
+
+// The "please tell us" box appears only while "Other" is ticked.
+function syncHeardOther() {
+  $('heardOther-field').hidden = !readChecks('heard').includes('other')
 }
 
 // ?src=…&from=… on the link: kept for this tab only, then removed from the
@@ -252,6 +274,7 @@ function invalidFields(d) {
   if (!AFFILIATIONS.some((a) => a.code === d.affiliation)) bad.push('affiliation')
   if (!EMAIL_PATTERN.test(d.email) || d.email.length > LIMITS.email) bad.push('email')
   if (!d.consent) bad.push('consent')
+  if (d.heardOther.length > LIMITS.heardOther) bad.push('heardOther')
   return bad
 }
 
@@ -349,6 +372,7 @@ form.addEventListener('submit', async (e) => {
 
     result = { ...body, email: data.email }
     form.reset()
+    syncHeardOther()
     form.hidden = true
     renderDone()
     $('done').hidden = false
@@ -371,6 +395,8 @@ FIELDS.forEach((f) =>
     }
   }),
 )
+
+$('heard').addEventListener('change', syncHeardOther)
 
 bindLangSwitch((next) => {
   lang = next

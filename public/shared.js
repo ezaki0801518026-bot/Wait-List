@@ -8,9 +8,9 @@ export const RELEASE_DATE = '2026-11-01'
 
 // Version of the privacy notice the consent checkbox refers to. Bump it
 // (and privacy.html) whenever the notice changes; it is stored per row.
-export const CONSENT_VERSION = 'waitlist-notice-2026-10-10'
+export const CONSENT_VERSION = 'waitlist-notice-2026-10-23'
 
-export const LIMITS = { name: 100, email: 254 }
+export const LIMITS = { name: 100, email: 254, heardOther: 100 }
 
 export const AFFILIATIONS = [
   { code: 'museum', en: 'Museum / Gallery', ja: '美術館・博物館・ギャラリー' },
@@ -48,6 +48,18 @@ export const INTERESTS = [
   { code: 'lexicon', en: 'Washi dictionary', ja: '和紙の単語辞書' },
   { code: 'map', en: 'Washi origins map', ja: '和紙の産地マップ' },
   { code: 'other', en: 'Something else', ja: 'その他' },
+]
+
+// Optional "How did you know about this?" (any number of answers). Choosing
+// "other" shows a short text box (LIMITS.heardOther characters).
+export const HEARD = [
+  { code: 'team', en: 'A message from our team', ja: 'WA-Chain のメンバーからの連絡' },
+  { code: 'linkedin', en: 'LinkedIn post', ja: 'LinkedIn の投稿' },
+  { code: 'colleague', en: 'A colleague or friend', ja: '同僚・知人から' },
+  { code: 'forum', en: 'A conservation forum or mailing list', ja: '保存修復のフォーラム・メーリングリスト' },
+  { code: 'instagram', en: 'Instagram', ja: 'Instagram' },
+  { code: 'event', en: 'An event or presentation', ja: 'イベント・発表' },
+  { code: 'other', en: 'Other (please tell us)', ja: 'その他（よろしければ教えてください）' },
 ]
 
 // ISO 3166-1 alpha-2. Display names come from Intl.DisplayNames in the

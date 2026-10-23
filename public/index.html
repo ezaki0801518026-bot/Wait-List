@@ -79,6 +79,17 @@
           <div id="interests" class="interest-list"></div>
         </fieldset>
 
+        <fieldset class="field interests">
+          <legend data-i18n="heardLabel">How did you know about this? (optional)</legend>
+          <p class="field-hint" data-i18n="interestsHint">Choose any that apply.</p>
+          <div id="heard" class="interest-list"></div>
+          <div class="field heard-other" id="heardOther-field" hidden>
+            <label for="heardOther" data-i18n="heardOtherLabel">Please tell us (optional)</label>
+            <input id="heardOther" name="heardOther" type="text" maxlength="100" autocomplete="off" aria-describedby="heardOther-error" />
+            <p class="field-error" id="heardOther-error" hidden></p>
+          </div>
+        </fieldset>
+
         <p class="purpose" data-i18n="purpose">We use your details only to provide WA-Chain Edu to you in the way that suits you best. We never sell them or share them with anyone else.</p>
 
         <div class="check">

