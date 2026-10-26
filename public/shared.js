@@ -28,7 +28,11 @@ export const AFFILIATIONS = [
 // becomes "other", so nothing typed into a URL can reach the sheet.
 //   src  — the channel the link was shared through (none → "direct")
 //   from — the button on the trial site that was used (none → "link")
-export const SOURCES = ['dm', 'interview', 'interview-demo', 'linkedin', 'email']
+export const SOURCES = [
+  'dm', 'interview', 'interview-demo', 'linkedin', 'email',
+  // Communities we post in (see WA-Chain 売り込み先_コンタクト・投稿手順)
+  'iccrom', 'aca', 'bpg', 'iamabookbinder', 'gbw', 'papermaking',
+]
 export const ENTRIES = [
   'hero', 'about', 'chat', 'washimap', 'lexicon', 'tour',
   'pricing', 'lessons', 'glossary', 'community', 'cohort',
